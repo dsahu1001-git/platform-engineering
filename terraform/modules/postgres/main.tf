@@ -19,8 +19,9 @@ variable "vpc_cidr" {
 }
 
 resource "random_password" "master" {
-  length  = 24
-  special = true
+  length           = 24
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
 resource "aws_security_group" "postgres" {
