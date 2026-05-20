@@ -1,0 +1,36 @@
+template:
+  name: promote-service-template
+  type: Pipeline
+  spec:
+    stages:
+      - stage:
+          name: Promote
+          identifier: Promote
+          type: Custom
+          spec:
+            execution:
+              steps:
+                - step:
+                    type: HarnessApproval
+                    name: Approval
+                    identifier: Approval
+                    spec:
+                      approvalMessage: Approve promotion of <+input> to <+input>
+                      includePipelineExecutionHistory: true
+                      approvers:
+                        userGroups:
+                          - platform-team
+                        minimumCount: 1
+                - step:
+                    type: ShellScript
+                    name: Create promotion PR
+                    identifier: Create_promotion_PR
+                    spec:
+                      shell: Bash
+                      source:
+                        type: Inline
+                        spec:
+                          script: |
+                            echo "Create PR updating delivery/releases/<target-env>.yaml from source environment."
+  identifier: promote_service_template
+  versionLabel: v1

@@ -1,0 +1,27 @@
+{
+  "title": "Release Control Overview",
+  "tags": ["platform", "release-control"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Backend Requests",
+      "targets": [
+        {
+          "expr": "sum(rate(release_control_api_requests_total[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Backend Errors",
+      "targets": [
+        {
+          "expr": "sum(rate(release_control_api_errors_total[5m]))"
+        }
+      ]
+    }
+  ]
+}

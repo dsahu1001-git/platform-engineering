@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/ORG/platform-engineering.git
+        revision: main
+        files:
+          - path: generated/argocd/services/*.yaml
+  template:
+    metadata:
+      name: '{{name}}-{{environment}}'
+    spec:
+      project: applications
+      source:
+        repoURL: https://github.com/ORG/platform-engineering.git
+        targetRevision: main
+        path: '{{manifestPath}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: false

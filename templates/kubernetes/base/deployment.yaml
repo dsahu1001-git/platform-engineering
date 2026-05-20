@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: SERVICE_NAME
+  labels:
+    app.kubernetes.io/name: SERVICE_NAME
+    app.kubernetes.io/managed-by: platform-engineering
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: SERVICE_NAME
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: SERVICE_NAME
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: IMAGE_REPOSITORY:IMAGE_TAG
+          ports:
+            - containerPort: CONTAINER_PORT
+          env:
+            - name: ENVIRONMENT
+              value: ENVIRONMENT_NAME
+          readinessProbe:
+            httpGet:
+              path: HEALTH_PATH
+              port: CONTAINER_PORT
+          livenessProbe:
+            httpGet:
+              path: HEALTH_PATH
+              port: CONTAINER_PORT
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

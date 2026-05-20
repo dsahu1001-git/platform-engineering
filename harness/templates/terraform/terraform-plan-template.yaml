@@ -1,0 +1,21 @@
+template:
+  name: terraform-plan-template
+  type: Pipeline
+  spec:
+    stages:
+      - stage:
+          name: Terraform_Plan
+          identifier: Terraform_Plan
+          type: IACM
+          spec:
+            workspace: <+input>
+            execution:
+              steps:
+                - step:
+                    name: Plan
+                    identifier: Plan
+                    type: IACMTerraformPlugin
+                    spec:
+                      command: plan
+  identifier: terraform_plan_template
+  versionLabel: v1

@@ -1,0 +1,8 @@
+apiVersion: platform.example.com/v1
+kind: ServiceSLO
+metadata:
+  name: SERVICE_NAME
+spec:
+  availabilityPercent: 99.5
+  latencyP95Ms: 500
+  errorRatePercent: 5

@@ -1,0 +1,15 @@
+inputSet:
+  name: release-control-backend-dev
+  identifier: release_control_backend_dev
+  orgIdentifier: default
+  projectIdentifier: enterprise_delivery_platform
+  pipeline:
+    identifier: service_ci_template
+    properties:
+      ci:
+        codebase:
+          repoName: release-control-backend
+          build:
+            type: branch
+            spec:
+              branch: main

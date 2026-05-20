@@ -1,0 +1,7 @@
+apiVersion: platform.example.com/v1
+kind: DeploymentStrategy
+metadata:
+  name: blue-green
+spec:
+  provider: argo-rollouts
+  autoPromotionEnabled: false

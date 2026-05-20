@@ -1,0 +1,25 @@
+template:
+  name: rollback-service-template
+  type: Pipeline
+  spec:
+    stages:
+      - stage:
+          name: Rollback
+          identifier: Rollback
+          type: Custom
+          spec:
+            execution:
+              steps:
+                - step:
+                    type: ShellScript
+                    name: Revert release intent
+                    identifier: Revert_release_intent
+                    spec:
+                      shell: Bash
+                      source:
+                        type: Inline
+                        spec:
+                          script: |
+                            echo "Rollback by reverting release intent in platform-engineering and letting Argo reconcile."
+  identifier: rollback_service_template
+  versionLabel: v1

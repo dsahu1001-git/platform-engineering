@@ -1,0 +1,16 @@
+apiVersion: platform.example.com/v1
+kind: Environment
+metadata:
+  name: prod
+spec:
+  promotion:
+    autoDeploy: false
+    requiresApproval: true
+  argocd:
+    autoSync: false
+    selfHeal: false
+    prune: false
+  defaults:
+    replicas: 3
+    logLevel: warn
+    postgresClass: standard

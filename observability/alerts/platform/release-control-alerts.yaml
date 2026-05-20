@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: release-control-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: release-control
+      rules:
+        - alert: ReleaseControlHighErrorRate
+          expr: sum(rate(release_control_api_errors_total[5m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Release Control backend is reporting API errors.

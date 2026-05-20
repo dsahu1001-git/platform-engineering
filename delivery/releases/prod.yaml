@@ -1,0 +1,7 @@
+apiVersion: platform.example.com/v1
+kind: ReleaseIntent
+metadata:
+  name: prod
+spec:
+  environment: prod
+  services: {}

@@ -1,0 +1,38 @@
+apiVersion: platform.example.com/v1
+kind: Service
+metadata:
+  name: release-control-backend
+  labels:
+    system: release-control
+spec:
+  owner: backend-team
+  type: backend
+  runtime: python
+  repo: github.com/ORG/release-control-backend
+  container:
+    port: 8000
+    healthPath: /health
+    metricsPath: /metrics
+  ingress:
+    enabled: true
+    paths:
+      - /api
+      - /metrics
+  dependencies:
+    postgres:
+      required: true
+      databaseName: release_control
+      secretName: release-control-backend-db
+  environments:
+    dev:
+      enabled: true
+    stage:
+      enabled: true
+    prod:
+      enabled: false
+  observability:
+    logs: true
+    metrics: true
+    slo:
+      availability: 99.5
+      latencyP95Ms: 500

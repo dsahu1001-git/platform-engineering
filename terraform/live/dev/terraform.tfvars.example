@@ -1,0 +1,4 @@
+aws_region    = "us-east-1"
+platform_name = "enterprise-delivery-platform"
+environment   = "dev"
+vpc_cidr      = "10.42.0.0/16"

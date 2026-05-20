@@ -1,0 +1,7 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: release-control
+  description: Sample enterprise release observability application.
+spec:
+  owner: platform-team

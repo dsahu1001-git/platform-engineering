@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: frontend-team
+spec:
+  type: team
+  profile:
+    displayName: Frontend Team
+  children: []

@@ -1,0 +1,57 @@
+template:
+  name: service-ci-template
+  type: Pipeline
+  spec:
+    stages:
+      - stage:
+          name: Build_Test_Publish
+          identifier: Build_Test_Publish
+          type: CI
+          spec:
+            cloneCodebase: false
+            infrastructure:
+              type: VM
+              spec:
+                type: HarnessCloud
+            execution:
+              steps:
+                - step:
+                    type: GitClone
+                    name: Clone service repo
+                    identifier: Clone_service_repo
+                    spec:
+                      connectorRef: account.github
+                      repoName: <+input>
+                      build:
+                        type: branch
+                        spec:
+                          branch: <+input>
+                - step:
+                    type: Run
+                    name: Test
+                    identifier: Test
+                    spec:
+                      shell: Sh
+                      command: <+input>
+                - step:
+                    type: BuildAndPushECR
+                    name: Build and push image
+                    identifier: Build_and_push_image
+                    spec:
+                      connectorRef: account.aws
+                      region: <+input>
+                      account: <+input>
+                      imageName: <+input>
+                      tags:
+                        - <+pipeline.sequenceId>
+                        - sha-<+codebase.commitSha>
+                - step:
+                    type: Run
+                    name: Update release intent
+                    identifier: Update_release_intent
+                    spec:
+                      shell: Sh
+                      command: |
+                        echo "Platform pipeline updates delivery/releases/<env>.yaml through a governed PR."
+  identifier: service_ci_template
+  versionLabel: v1

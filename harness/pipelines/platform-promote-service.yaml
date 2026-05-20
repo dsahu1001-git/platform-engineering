@@ -1,0 +1,8 @@
+pipeline:
+  name: platform-promote-service
+  identifier: platform_promote_service
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  template:
+    templateRef: promote_service_template
+    versionLabel: v1

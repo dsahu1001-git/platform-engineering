@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Platform Service",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "platform.example.com/v1" },
+    "kind": { "const": "Service" },
+    "metadata": {
+      "type": "object",
+      "required": ["name"]
+    },
+    "spec": {
+      "type": "object",
+      "required": ["owner", "type", "runtime", "repo", "container"]
+    }
+  }
+}

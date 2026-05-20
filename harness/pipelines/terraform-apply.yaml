@@ -1,0 +1,37 @@
+pipeline:
+  name: terraform-apply
+  identifier: terraform_apply
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  stages:
+    - stage:
+        name: Approval
+        identifier: Approval
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  name: Manual approval before infrastructure creation
+                  identifier: Manual_approval
+                  type: HarnessApproval
+                  spec:
+                    approvalMessage: This creates or changes AWS infrastructure.
+                    approvers:
+                      userGroups:
+                        - platform-team
+                      minimumCount: 1
+    - stage:
+        name: Apply
+        identifier: Apply
+        type: IACM
+        spec:
+          workspace: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Apply
+                  identifier: Apply
+                  type: IACMTerraformPlugin
+                  spec:
+                    command: apply

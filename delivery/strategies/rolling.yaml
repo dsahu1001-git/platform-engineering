@@ -1,0 +1,7 @@
+apiVersion: platform.example.com/v1
+kind: DeploymentStrategy
+metadata:
+  name: rolling
+spec:
+  maxUnavailable: 0
+  maxSurge: 1

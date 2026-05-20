@@ -1,0 +1,25 @@
+pipeline:
+  name: platform-onboard-service
+  identifier: platform_onboard_service
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  stages:
+    - stage:
+        name: Validate service metadata
+        identifier: Validate_service_metadata
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: VM
+            spec:
+              type: HarnessCloud
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Validate
+                  identifier: Validate
+                  spec:
+                    shell: Sh
+                    command: python3 automation/generators/validate_catalog.py

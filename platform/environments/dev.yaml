@@ -1,0 +1,16 @@
+apiVersion: platform.example.com/v1
+kind: Environment
+metadata:
+  name: dev
+spec:
+  promotion:
+    autoDeploy: true
+    requiresApproval: false
+  argocd:
+    autoSync: true
+    selfHeal: true
+    prune: false
+  defaults:
+    replicas: 1
+    logLevel: debug
+    postgresClass: small

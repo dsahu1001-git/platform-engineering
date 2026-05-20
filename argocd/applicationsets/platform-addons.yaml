@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-addons
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: monitoring
+            path: generated/argocd/addons/monitoring
+            namespace: monitoring
+          - name: aws-load-balancer-controller
+            path: generated/argocd/addons/aws-load-balancer-controller
+            namespace: kube-system
+  template:
+    metadata:
+      name: '{{name}}'
+    spec:
+      project: applications
+      source:
+        repoURL: https://github.com/ORG/platform-engineering.git
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'

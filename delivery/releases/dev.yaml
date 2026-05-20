@@ -1,0 +1,21 @@
+apiVersion: platform.example.com/v1
+kind: ReleaseIntent
+metadata:
+  name: dev
+spec:
+  environment: dev
+  services:
+    release-control-frontend:
+      version: 0.1.0
+      image:
+        repository: REPLACE_WITH_ECR/release-control-frontend
+        tag: local
+        digest: ""
+      strategy: rolling
+    release-control-backend:
+      version: 0.1.0
+      image:
+        repository: REPLACE_WITH_ECR/release-control-backend
+        tag: local
+        digest: ""
+      strategy: rolling

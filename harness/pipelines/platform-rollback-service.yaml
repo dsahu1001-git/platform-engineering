@@ -1,0 +1,8 @@
+pipeline:
+  name: platform-rollback-service
+  identifier: platform_rollback_service
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  template:
+    templateRef: rollback_service_template
+    versionLabel: v1

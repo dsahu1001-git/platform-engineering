@@ -1,0 +1,11 @@
+apiVersion: platform.example.com/v1
+kind: DeploymentStrategy
+metadata:
+  name: canary
+spec:
+  provider: argo-rollouts
+  steps:
+    - setWeight: 10
+    - pause: 300
+    - setWeight: 50
+    - pause: 300

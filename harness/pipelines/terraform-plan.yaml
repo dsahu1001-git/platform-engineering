@@ -1,0 +1,8 @@
+pipeline:
+  name: terraform-plan
+  identifier: terraform_plan
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  template:
+    templateRef: terraform_plan_template
+    versionLabel: v1

@@ -1,0 +1,14 @@
+apiVersion: platform.example.com/v1
+kind: ObservabilityDefaults
+metadata:
+  name: service-standard
+spec:
+  logs:
+    backend: loki
+  metrics:
+    backend: prometheus
+  dashboards:
+    generateServiceDashboard: true
+  alerts:
+    errorRateThresholdPercent: 5
+    latencyP95Ms: 500

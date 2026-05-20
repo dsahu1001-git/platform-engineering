@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Release Intent",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"]
+}

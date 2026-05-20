@@ -1,0 +1,10 @@
+apiVersion: platform.example.com/v1
+kind: SecurityDefaults
+metadata:
+  name: restricted
+spec:
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  requireResourceLimits: true
+  disallowLatestImageTag: true
+  networkPolicy: default-deny-with-explicit-egress

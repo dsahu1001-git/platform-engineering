@@ -1,0 +1,14 @@
+apiVersion: platform.example.com/v1
+kind: PromotionPolicy
+metadata:
+  name: standard
+spec:
+  dev:
+    approval: none
+  stage:
+    approval: platform-team
+    requireHealthyDev: true
+  prod:
+    approval: platform-team
+    requireHealthyStage: true
+    changeWindow: business-hours
