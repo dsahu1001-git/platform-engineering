@@ -1,0 +1,46 @@
+pipeline:
+  name: release-control-backend-ci
+  identifier: release_control_backend_ci
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  tags:
+    service: release-control-backend
+    runtime: python
+  properties:
+    ci:
+      codebase:
+        connectorRef: github
+        repoName: release-control-backend
+        build:
+          type: branch
+          spec:
+            branch: main
+  stages:
+    - stage:
+        name: Build and Test
+        identifier: Build_and_Test
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Install dependencies
+                  identifier: Install_dependencies
+                  spec:
+                    shell: Sh
+                    command: pip install -r requirements-dev.txt
+              - step:
+                  type: Run
+                  name: Run tests
+                  identifier: Run_tests
+                  spec:
+                    shell: Sh
+                    command: pytest tests
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}

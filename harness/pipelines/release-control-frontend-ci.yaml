@@ -1,0 +1,53 @@
+pipeline:
+  name: release-control-frontend-ci
+  identifier: release_control_frontend_ci
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  tags:
+    service: release-control-frontend
+    runtime: javascript
+  properties:
+    ci:
+      codebase:
+        connectorRef: github
+        repoName: release-control-frontend
+        build:
+          type: branch
+          spec:
+            branch: main
+  stages:
+    - stage:
+        name: Build and Test
+        identifier: Build_and_Test
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Install dependencies
+                  identifier: Install_dependencies
+                  spec:
+                    shell: Sh
+                    command: npm ci
+              - step:
+                  type: Run
+                  name: Run tests
+                  identifier: Run_tests
+                  spec:
+                    shell: Sh
+                    command: npm test
+              - step:
+                  type: Run
+                  name: Build frontend
+                  identifier: Build_frontend
+                  spec:
+                    shell: Sh
+                    command: npm run build
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
