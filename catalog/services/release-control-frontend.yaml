@@ -8,7 +8,7 @@ spec:
   owner: frontend-team
   type: frontend
   runtime: javascript
-  repo: github.com/ORG/release-control-frontend
+  repo: github.com/dsahu1001-git/release-control-frontend
   container:
     port: 8080
     healthPath: /health

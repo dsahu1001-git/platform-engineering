@@ -19,7 +19,7 @@ spec:
     spec:
       project: applications
       source:
-        repoURL: https://github.com/ORG/platform-engineering.git
+        repoURL: https://github.com/dsahu1001-git/platform-engineering.git
         targetRevision: main
         path: '{{path}}'
       destination:

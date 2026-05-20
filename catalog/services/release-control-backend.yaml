@@ -8,7 +8,7 @@ spec:
   owner: backend-team
   type: backend
   runtime: python
-  repo: github.com/ORG/release-control-backend
+  repo: github.com/dsahu1001-git/release-control-backend
   container:
     port: 8000
     healthPath: /health

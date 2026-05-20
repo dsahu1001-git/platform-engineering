@@ -9,7 +9,7 @@ name: payment-api
 owner: payments-team
 type: backend
 runtime: python
-repo: github.com/ORG/payment-api
+repo: github.com/dsahu1001-git/payment-api
 port: 8080
 healthPath: /health
 metricsPath: /metrics

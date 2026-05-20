@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
 spec:
   sourceRepos:
-    - https://github.com/ORG/platform-engineering.git
+    - https://github.com/dsahu1001-git/platform-engineering.git
   destinations:
     - namespace: '*'
       server: https://kubernetes.default.svc
