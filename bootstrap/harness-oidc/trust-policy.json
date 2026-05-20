@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::808849570426:oidc-provider/app.harness.io/ng/api/oidc/account/c0ar0uHnRFa9kKNjOOf3rg"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "app.harness.io/ng/api/oidc/account/c0ar0uHnRFa9kKNjOOf3rg:aud": "sts.amazonaws.com"
+        }
+      }
+    }
+  ]
+}
