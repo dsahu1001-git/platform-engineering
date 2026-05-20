@@ -203,7 +203,7 @@ metadata:
   name: release-control-gateway
   namespace: release-control
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: release-control-gateway
   ports:
