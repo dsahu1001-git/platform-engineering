@@ -6,6 +6,7 @@ pipeline:
   tags:
     service: release-control-backend
     runtime: python
+    capability: ci
   properties:
     ci:
       codebase:
@@ -17,24 +18,72 @@ pipeline:
             branch: main
   stages:
     - stage:
-        name: Build and Test
-        identifier: Build_and_Test
+        name: Source and Dependency Governance
+        identifier: Source_and_Dependency_Governance
         type: CI
         spec:
           cloneCodebase: true
+          caching:
+            enabled: true
+          buildIntelligence:
+            enabled: true
           execution:
             steps:
               - step:
                   type: Run
-                  name: Install dependencies
-                  identifier: Install_dependencies
+                  name: Install locked dependencies
+                  identifier: Install_locked_dependencies
                   spec:
                     shell: Sh
                     command: pip install -r requirements-dev.txt
               - step:
                   type: Run
-                  name: Run tests
-                  identifier: Run_tests
+                  name: Python syntax contract
+                  identifier: Python_syntax_contract
+                  spec:
+                    shell: Sh
+                    command: python -m compileall app
+              - step:
+                  type: Run
+                  name: Runtime contract check
+                  identifier: Runtime_contract_check
+                  spec:
+                    shell: Sh
+                    command: |
+                      python - <<'PY'
+                      from app.config import settings
+                      assert settings.app_name == "release-control-backend"
+                      print("service contract ok")
+                      PY
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Test and Package
+        identifier: Test_and_Package
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+          buildIntelligence:
+            enabled: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Install test dependencies
+                  identifier: Install_test_dependencies
+                  spec:
+                    shell: Sh
+                    command: pip install -r requirements-dev.txt
+              - step:
+                  type: Run
+                  name: Unit and contract tests
+                  identifier: Unit_and_contract_tests
                   spec:
                     shell: Sh
                     command: pytest tests
@@ -44,3 +93,38 @@ pipeline:
           runtime:
             type: Cloud
             spec: {}
+    - stage:
+        name: Container Publish
+        identifier: Container_Publish
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+          execution:
+            steps:
+              - step:
+                  type: BuildAndPushECR
+                  name: Build and push ECR image
+                  identifier: Build_and_push_ECR_image
+                  spec:
+                    connectorRef: aws
+                    region: us-east-1
+                    account: "808849570426"
+                    imageName: release-control-backend
+                    tags:
+                      - dev
+                      - sha-<+codebase.commitSha>
+                      - build-<+pipeline.sequenceId>
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: MarkAsFailure

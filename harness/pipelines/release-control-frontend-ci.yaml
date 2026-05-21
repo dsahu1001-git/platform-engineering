@@ -6,6 +6,7 @@ pipeline:
   tags:
     service: release-control-frontend
     runtime: javascript
+    capability: ci
   properties:
     ci:
       codebase:
@@ -17,11 +18,56 @@ pipeline:
             branch: main
   stages:
     - stage:
-        name: Build and Test
-        identifier: Build_and_Test
+        name: Source and Dependency Governance
+        identifier: Source_and_Dependency_Governance
         type: CI
         spec:
           cloneCodebase: true
+          caching:
+            enabled: true
+          buildIntelligence:
+            enabled: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Install locked dependencies
+                  identifier: Install_locked_dependencies
+                  spec:
+                    shell: Sh
+                    command: npm ci
+              - step:
+                  type: Run
+                  name: Dependency audit
+                  identifier: Dependency_audit
+                  spec:
+                    shell: Sh
+                    command: npm audit --audit-level=high
+              - step:
+                  type: Run
+                  name: Service metadata contract
+                  identifier: Service_metadata_contract
+                  spec:
+                    shell: Sh
+                    command: |
+                      test -f package-lock.json
+                      node -e "const pkg=require('./package.json'); if (pkg.name !== 'release-control-frontend') throw new Error('unexpected package name')"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Test and Package
+        identifier: Test_and_Package
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+          buildIntelligence:
+            enabled: true
           execution:
             steps:
               - step:
@@ -33,15 +79,15 @@ pipeline:
                     command: npm ci
               - step:
                   type: Run
-                  name: Run tests
-                  identifier: Run_tests
+                  name: Unit tests
+                  identifier: Unit_tests
                   spec:
                     shell: Sh
                     command: npm test
               - step:
                   type: Run
-                  name: Build frontend
-                  identifier: Build_frontend
+                  name: Production build
+                  identifier: Production_build
                   spec:
                     shell: Sh
                     command: npm run build
@@ -51,3 +97,38 @@ pipeline:
           runtime:
             type: Cloud
             spec: {}
+    - stage:
+        name: Container Publish
+        identifier: Container_Publish
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+          execution:
+            steps:
+              - step:
+                  type: BuildAndPushECR
+                  name: Build and push ECR image
+                  identifier: Build_and_push_ECR_image
+                  spec:
+                    connectorRef: aws
+                    region: us-east-1
+                    account: "808849570426"
+                    imageName: release-control-frontend
+                    tags:
+                      - dev
+                      - sha-<+codebase.commitSha>
+                      - build-<+pipeline.sequenceId>
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: MarkAsFailure

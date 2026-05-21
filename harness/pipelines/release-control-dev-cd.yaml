@@ -1,0 +1,153 @@
+pipeline:
+  name: release-control-dev-cd
+  identifier: release_control_dev_cd
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  tags:
+    system: release-control
+    environment: dev
+    capability: cd
+  properties:
+    ci:
+      codebase:
+        connectorRef: github
+        repoName: platform-engineering
+        build:
+          type: branch
+          spec:
+            branch: main
+  variables:
+    - name: public_url
+      type: String
+      description: Public ALB URL for the dev environment.
+      required: true
+      value: http://k8s-releasec-releasec-a31835be1e-549486605.us-east-1.elb.amazonaws.com
+  stages:
+    - stage:
+        name: Release Readiness Gate
+        identifier: Release_Readiness_Gate
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+          buildIntelligence:
+            enabled: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Validate platform contract
+                  identifier: Validate_platform_contract
+                  spec:
+                    shell: Sh
+                    command: |
+                      python3 -m pip install --user pyyaml jsonschema
+                      python3 automation/generators/validate_catalog.py
+              - step:
+                  type: Run
+                  name: Validate generated deployment assets
+                  identifier: Validate_generated_deployment_assets
+                  spec:
+                    shell: Sh
+                    command: |
+                      test -f generated/kubernetes/release-control-live.yaml
+                      test -f generated/kubernetes/release-control-alb-ingress.yaml
+                      grep -q "kind: Ingress" generated/kubernetes/release-control-alb-ingress.yaml
+                      grep -q "release-control-backend" generated/kubernetes/release-control-live.yaml
+                      grep -q "release-control-frontend" generated/kubernetes/release-control-live.yaml
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Deployment Verification
+        identifier: Deployment_Verification
+        type: CI
+        spec:
+          cloneCodebase: false
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Verify public frontend
+                  identifier: Verify_public_frontend
+                  spec:
+                    shell: Sh
+                    command: |
+                      set -e
+                      code=$(curl -sS -o /tmp/frontend.html -w "%{http_code}" "<+pipeline.variables.public_url>/")
+                      test "$code" = "200"
+                      grep -qi "release" /tmp/frontend.html
+              - step:
+                  type: Run
+                  name: Verify backend and database health
+                  identifier: Verify_backend_and_database_health
+                  spec:
+                    shell: Sh
+                    command: |
+                      set -e
+                      curl -sS "<+pipeline.variables.public_url>/api/status" > /tmp/status.json
+                      python3 - <<'PY'
+                      import json
+                      payload = json.load(open("/tmp/status.json"))
+                      assert payload["service"] == "release-control-backend", payload
+                      assert payload["database"]["status"] == "healthy", payload
+                      print("backend and database health verified")
+                      PY
+              - step:
+                  type: Run
+                  name: Verify observability endpoints
+                  identifier: Verify_observability_endpoints
+                  spec:
+                    shell: Sh
+                    command: |
+                      set -e
+                      curl -fsS "<+pipeline.variables.public_url>/metrics" | head -40
+                      curl -fsS "<+pipeline.variables.public_url>/api/logs" > /tmp/logs.json
+                      python3 - <<'PY'
+                      import json
+                      payload = json.load(open("/tmp/logs.json"))
+                      assert "logs" in payload, payload
+                      print("application logs endpoint verified")
+                      PY
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Release Evidence
+        identifier: Release_Evidence
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Capture release evidence
+                  identifier: Capture_release_evidence
+                  spec:
+                    shell: Sh
+                    command: |
+                      echo "system=release-control"
+                      echo "environment=dev"
+                      echo "public_url=<+pipeline.variables.public_url>"
+                      echo "catalog_services=$(find catalog/services -name '*.yaml' | sort | tr '\n' ' ')"
+                      echo "generated_assets=$(find generated/kubernetes -name 'release-control-*.yaml' | sort | tr '\n' ' ')"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: MarkAsFailure
