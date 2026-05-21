@@ -29,6 +29,14 @@ pipeline:
         type: CI
         spec:
           cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
           caching:
             enabled: true
           buildIntelligence:
@@ -40,6 +48,9 @@ pipeline:
                   name: Validate platform contract
                   identifier: Validate_platform_contract
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
                     command: |
                       python3 -m pip install --user pyyaml jsonschema
@@ -49,6 +60,9 @@ pipeline:
                   name: Validate generated deployment assets
                   identifier: Validate_generated_deployment_assets
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
                     command: |
                       test -f generated/kubernetes/release-control-live.yaml
@@ -68,6 +82,14 @@ pipeline:
         type: CI
         spec:
           cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
           execution:
             steps:
               - step:
@@ -75,9 +97,13 @@ pipeline:
                   name: Verify public frontend
                   identifier: Verify_public_frontend
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
                     command: |
                       set -e
+                      apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
                       code=$(curl -sS -o /tmp/frontend.html -w "%{http_code}" "<+pipeline.variables.public_url>/")
                       test "$code" = "200"
                       grep -qi "release" /tmp/frontend.html
@@ -86,9 +112,13 @@ pipeline:
                   name: Verify backend and database health
                   identifier: Verify_backend_and_database_health
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
                     command: |
                       set -e
+                      apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
                       curl -sS "<+pipeline.variables.public_url>/api/status" > /tmp/status.json
                       python3 - <<'PY'
                       import json
@@ -102,9 +132,13 @@ pipeline:
                   name: Verify observability endpoints
                   identifier: Verify_observability_endpoints
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
                     command: |
                       set -e
+                      apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
                       curl -fsS "<+pipeline.variables.public_url>/metrics" | head -40
                       curl -fsS "<+pipeline.variables.public_url>/api/logs" > /tmp/logs.json
                       python3 - <<'PY'
@@ -125,6 +159,14 @@ pipeline:
         type: CI
         spec:
           cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
           execution:
             steps:
               - step:
@@ -132,6 +174,9 @@ pipeline:
                   name: Capture release evidence
                   identifier: Capture_release_evidence
                   spec:
+                    connectorRef: dockerhub_public
+                    image: alpine:3.20
+
                     shell: Sh
                     command: |
                       echo "system=release-control"

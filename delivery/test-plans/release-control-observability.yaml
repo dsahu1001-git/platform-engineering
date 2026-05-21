@@ -12,7 +12,7 @@ spec:
       path: /metrics
       expectedStatus: 200
       assertions:
-        - contains: http_requests_total
+        - contains: release_control_api_requests_total
     - name: app-log-query
       type: http
       path: /api/logs

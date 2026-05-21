@@ -23,6 +23,14 @@ pipeline:
         type: CI
         spec:
           cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
           caching:
             enabled: true
           buildIntelligence:
@@ -34,6 +42,9 @@ pipeline:
                   name: Install locked dependencies
                   identifier: Install_locked_dependencies
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
                     command: pip install -r requirements-dev.txt
               - step:
@@ -41,18 +52,27 @@ pipeline:
                   name: Python syntax contract
                   identifier: Python_syntax_contract
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
-                    command: python -m compileall app
+                    command: |
+                      pip install -r requirements-dev.txt
+                      python -m compileall app
               - step:
                   type: Run
                   name: Runtime contract check
                   identifier: Runtime_contract_check
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
                     command: |
+                      pip install -r requirements-dev.txt
                       python - <<'PY'
-                      from app.config import settings
-                      assert settings.app_name == "release-control-backend"
+                      from app.config import get_settings
+                      assert get_settings().service_name == "release-control-backend"
                       print("service contract ok")
                       PY
           platform:
@@ -67,6 +87,14 @@ pipeline:
         type: CI
         spec:
           cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
           caching:
             enabled: true
           buildIntelligence:
@@ -78,6 +106,9 @@ pipeline:
                   name: Install test dependencies
                   identifier: Install_test_dependencies
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
                     command: pip install -r requirements-dev.txt
               - step:
@@ -85,8 +116,13 @@ pipeline:
                   name: Unit and contract tests
                   identifier: Unit_and_contract_tests
                   spec:
+                    connectorRef: dockerhub_public
+                    image: python:3.12-slim
+
                     shell: Sh
-                    command: pytest tests
+                    command: |
+                      pip install -r requirements-dev.txt
+                      PYTHONPATH=. pytest tests
           platform:
             os: Linux
             arch: Amd64
@@ -99,6 +135,14 @@ pipeline:
         type: CI
         spec:
           cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
           caching:
             enabled: true
           execution:
