@@ -44,9 +44,17 @@ Test plans live in `delivery/test-plans/` so service teams can discover expectat
 
 ## Harness Pipelines
 
+- `release-control-enterprise-delivery`: the primary branched enterprise parent pipeline. It chains reusable child pipelines for frontend CI, backend CI, dev verification, environment promotion, approvals, and release evidence in one graph.
 - `release-control-frontend-ci`: JavaScript CI with dependency governance, tests, build, and ECR publish.
 - `release-control-backend-ci`: Python CI with dependency governance, contract tests, and ECR publish.
 - `release-control-dev-cd`: dev release verification and evidence.
 - `release-control-environment-promotion`: reusable environment promotion pipeline for dev -> stage and stage -> prod.
 
-Harness Cloud is currently blocked until account validation is completed. The enterprise path is to run these pipelines on a Harness Delegate inside the EKS cluster.
+The primary pipeline branches by `release_path`:
+
+- `dev_only`: CI, image publish, dev verification, evidence.
+- `dev_to_stage`: CI, image publish, dev verification, stage approval, stage gates, evidence.
+- `stage_to_prod`: CI, image publish, dev verification, production approval, production readiness, evidence.
+- `full`: CI, image publish, dev verification, stage approval, stage gates, production approval, production readiness, evidence.
+
+Harness runs these pipelines on the `platform-eks-dev` delegate inside the EKS cluster.

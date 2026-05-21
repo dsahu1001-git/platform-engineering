@@ -1,0 +1,214 @@
+pipeline:
+  name: release-control-enterprise-delivery
+  identifier: release_control_enterprise_delivery
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  tags:
+    system: release-control
+    capability: enterprise-delivery
+    pattern: branched-single-parent-pipeline
+  variables:
+    - name: release_path
+      type: String
+      description: dev_only, dev_to_stage, stage_to_prod, or full.
+      required: true
+      value: dev_only
+  stages:
+    - stage:
+        name: Release Intake
+        identifier: Release_Intake
+        type: CI
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Validate release path
+                  identifier: Validate_release_path
+                  spec:
+                    connectorRef: dockerhub_public
+                    image: alpine:3.20
+                    shell: Sh
+                    command: |
+                      case "<+pipeline.variables.release_path>" in
+                        dev_only|dev_to_stage|stage_to_prod|full) ;;
+                        *) echo "Invalid release_path"; exit 1 ;;
+                      esac
+                      echo "release_path=<+pipeline.variables.release_path>"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Frontend CI
+        identifier: Frontend_CI
+        type: Pipeline
+        spec:
+          org: default
+          project: enterprise_delivery_platform
+          pipeline: release_control_frontend_ci
+    - stage:
+        name: Backend CI
+        identifier: Backend_CI
+        type: Pipeline
+        spec:
+          org: default
+          project: enterprise_delivery_platform
+          pipeline: release_control_backend_ci
+    - stage:
+        name: Dev CD Verification
+        identifier: Dev_CD_Verification
+        type: Pipeline
+        spec:
+          org: default
+          project: enterprise_delivery_platform
+          pipeline: release_control_dev_cd
+    - stage:
+        name: Stage Promotion Approval
+        identifier: Stage_Promotion_Approval
+        type: Custom
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.variables.release_path> == "dev_to_stage" || <+pipeline.variables.release_path> == "full"
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: HarnessApproval
+                  name: Approve stage promotion
+                  identifier: Approve_stage_promotion
+                  timeout: 1d
+                  spec:
+                    approvalMessage: Approve promotion of release-control from dev to stage after CI and dev verification.
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups:
+                        - _project_all_users
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                    approverInputs: []
+    - stage:
+        name: Stage Promotion Gates
+        identifier: Stage_Promotion_Gates
+        type: Pipeline
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.variables.release_path> == "dev_to_stage" || <+pipeline.variables.release_path> == "full"
+        spec:
+          org: default
+          project: enterprise_delivery_platform
+          pipeline: release_control_environment_promotion
+    - stage:
+        name: Production Change Approval
+        identifier: Production_Change_Approval
+        type: Custom
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.variables.release_path> == "stage_to_prod" || <+pipeline.variables.release_path> == "full"
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: HarnessApproval
+                  name: Approve production change
+                  identifier: Approve_production_change
+                  timeout: 1d
+                  spec:
+                    approvalMessage: Approve production promotion for release-control. Confirm release evidence, rollback readiness, and prod change window.
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups:
+                        - _project_all_users
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                    approverInputs: []
+    - stage:
+        name: Production Readiness
+        identifier: Production_Readiness
+        type: CI
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.variables.release_path> == "stage_to_prod" || <+pipeline.variables.release_path> == "full"
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Validate prod readiness controls
+                  identifier: Validate_prod_readiness_controls
+                  spec:
+                    connectorRef: dockerhub_public
+                    image: alpine:3.20
+                    shell: Sh
+                    command: |
+                      apk add --no-cache git
+                      git clone --depth 1 https://github.com/dsahu1001-git/platform-engineering.git .
+                      test -f delivery/releases/prod.yaml
+                      test -f delivery/test-plans/release-control-prod-readiness.yaml
+                      grep -q "requiresApproval: true" platform/environments/prod.yaml
+                      grep -q "autoDeploy: false" platform/environments/prod.yaml
+                      echo "production readiness controls passed"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Enterprise Release Evidence
+        identifier: Enterprise_Release_Evidence
+        type: CI
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eks_dev_delegate
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Capture parent release evidence
+                  identifier: Capture_parent_release_evidence
+                  spec:
+                    connectorRef: dockerhub_public
+                    image: alpine:3.20
+                    shell: Sh
+                    command: |
+                      echo "system=release-control"
+                      echo "release_path=<+pipeline.variables.release_path>"
+                      echo "parent_pipeline=release_control_enterprise_delivery"
+                      echo "frontend_ci=release_control_frontend_ci"
+                      echo "backend_ci=release_control_backend_ci"
+                      echo "dev_cd=release_control_dev_cd"
+                      echo "promotion_pipeline=release_control_environment_promotion"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
