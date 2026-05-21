@@ -4,4 +4,30 @@ metadata:
   name: stage
 spec:
   environment: stage
-  services: {}
+  services:
+    release-control-frontend:
+      version: 0.1.0
+      image:
+        repository: 808849570426.dkr.ecr.us-east-1.amazonaws.com/release-control-frontend
+        tag: promote-from-dev
+        digest: ""
+      strategy: rolling
+      promotion:
+        sourceEnvironment: dev
+        requiredTestPlans:
+          - release-control-smoke
+          - release-control-contract
+          - release-control-observability
+    release-control-backend:
+      version: 0.1.0
+      image:
+        repository: 808849570426.dkr.ecr.us-east-1.amazonaws.com/release-control-backend
+        tag: promote-from-dev
+        digest: ""
+      strategy: rolling
+      promotion:
+        sourceEnvironment: dev
+        requiredTestPlans:
+          - release-control-smoke
+          - release-control-contract
+          - release-control-observability

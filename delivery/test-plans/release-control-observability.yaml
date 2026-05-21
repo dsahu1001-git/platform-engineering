@@ -1,0 +1,19 @@
+apiVersion: platform.example.com/v1
+kind: TestPlan
+metadata:
+  name: release-control-observability
+spec:
+  owner: platform-team
+  scope: environment
+  blocking: true
+  stages:
+    - name: prometheus-metrics
+      type: http
+      path: /metrics
+      expectedStatus: 200
+      assertions:
+        - contains: http_requests_total
+    - name: app-log-query
+      type: http
+      path: /api/logs
+      expectedStatus: 200

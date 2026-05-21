@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: release-control-dev
+  labels:
+    platform.example.com/environment: dev
+    platform.example.com/system: release-control
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: release-control-stage
+  labels:
+    platform.example.com/environment: stage
+    platform.example.com/system: release-control
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: release-control-prod
+  labels:
+    platform.example.com/environment: prod
+    platform.example.com/system: release-control

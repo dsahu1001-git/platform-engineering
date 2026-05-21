@@ -1,0 +1,22 @@
+apiVersion: platform.example.com/v1
+kind: TestPlan
+metadata:
+  name: release-control-prod-readiness
+spec:
+  owner: platform-team
+  scope: environment
+  blocking: true
+  stages:
+    - name: release-evidence-present
+      type: platform-contract
+      files:
+        - delivery/releases/prod.yaml
+        - observability/slo/service-slo-template.yaml
+        - policy/kubernetes/kyverno/require-non-root.yaml
+    - name: prod-approval-required
+      type: platform-contract
+      assertions:
+        - file: platform/environments/prod.yaml
+          contains: "requiresApproval: true"
+        - file: platform/environments/prod.yaml
+          contains: "autoDeploy: false"

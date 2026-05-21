@@ -1,0 +1,186 @@
+pipeline:
+  name: release-control-environment-promotion
+  identifier: release_control_environment_promotion
+  projectIdentifier: enterprise_delivery_platform
+  orgIdentifier: default
+  tags:
+    system: release-control
+    capability: promotion
+    pattern: multi-environment-single-cluster
+  properties:
+    ci:
+      codebase:
+        connectorRef: github
+        repoName: platform-engineering
+        build:
+          type: branch
+          spec:
+            branch: main
+  variables:
+    - name: source_environment
+      type: String
+      description: Environment being promoted from.
+      required: true
+      value: dev
+    - name: target_environment
+      type: String
+      description: Environment being promoted to.
+      required: true
+      value: stage
+    - name: public_url
+      type: String
+      description: Public URL for the target environment.
+      required: true
+      value: http://k8s-releasec-releasec-a31835be1e-549486605.us-east-1.elb.amazonaws.com
+  stages:
+    - stage:
+        name: Promotion Contract Gate
+        identifier: Promotion_Contract_Gate
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+          buildIntelligence:
+            enabled: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Validate catalog and release intents
+                  identifier: Validate_catalog_and_release_intents
+                  spec:
+                    shell: Sh
+                    command: |
+                      python3 -m pip install --user pyyaml jsonschema
+                      python3 automation/generators/validate_catalog.py
+              - step:
+                  type: Run
+                  name: Validate promotion path
+                  identifier: Validate_promotion_path
+                  spec:
+                    shell: Sh
+                    command: |
+                      set -e
+                      test -f "delivery/releases/<+pipeline.variables.source_environment>.yaml"
+                      test -f "delivery/releases/<+pipeline.variables.target_environment>.yaml"
+                      test -f "platform/environments/<+pipeline.variables.target_environment>.yaml"
+                      grep -q "sourceEnvironment: <+pipeline.variables.source_environment>" "delivery/releases/<+pipeline.variables.target_environment>.yaml"
+                      grep -q "requiredTestPlans:" "delivery/releases/<+pipeline.variables.target_environment>.yaml"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Quality Gates
+        identifier: Quality_Gates
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Smoke tests
+                  identifier: Smoke_tests
+                  spec:
+                    shell: Sh
+                    command: |
+                      set -e
+                      curl -fsS "<+pipeline.variables.public_url>/" >/tmp/frontend.html
+                      curl -fsS "<+pipeline.variables.public_url>/api/status" >/tmp/status.json
+                      python3 - <<'PY'
+                      import json
+                      payload = json.load(open("/tmp/status.json"))
+                      assert payload["health"] == "healthy", payload
+                      assert payload["database"]["status"] == "healthy", payload
+                      print("smoke tests passed")
+                      PY
+              - step:
+                  type: Run
+                  name: Contract tests
+                  identifier: Contract_tests
+                  spec:
+                    shell: Sh
+                    command: |
+                      set -e
+                      curl -fsS "<+pipeline.variables.public_url>/api/status" >/tmp/status.json
+                      curl -fsS "<+pipeline.variables.public_url>/api/logs" >/tmp/logs.json
+                      python3 - <<'PY'
+                      import json
+                      status = json.load(open("/tmp/status.json"))
+                      logs = json.load(open("/tmp/logs.json"))
+                      assert status["service"] == "release-control-backend", status
+                      assert isinstance(logs["logs"], list), logs
+                      print("contract tests passed")
+                      PY
+              - step:
+                  type: Run
+                  name: Observability tests
+                  identifier: Observability_tests
+                  spec:
+                    shell: Sh
+                    command: |
+                      set -e
+                      curl -fsS "<+pipeline.variables.public_url>/metrics" >/tmp/metrics.txt
+                      grep -q "http_requests_total" /tmp/metrics.txt
+                      echo "observability tests passed"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Promotion Approval
+        identifier: Promotion_Approval
+        type: CI
+        spec:
+          cloneCodebase: false
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Dev auto approval guard
+                  identifier: Dev_auto_approval_guard
+                  spec:
+                    shell: Sh
+                    command: |
+                      if [ "<+pipeline.variables.target_environment>" = "prod" ]; then
+                        echo "Production promotion requires Harness approval in the production pipeline policy."
+                        exit 1
+                      fi
+                      echo "Non-prod promotion can continue after automated gates."
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: Release Evidence
+        identifier: Release_Evidence
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Capture promotion evidence
+                  identifier: Capture_promotion_evidence
+                  spec:
+                    shell: Sh
+                    command: |
+                      echo "source_environment=<+pipeline.variables.source_environment>"
+                      echo "target_environment=<+pipeline.variables.target_environment>"
+                      echo "required_test_plans=$(find delivery/test-plans -name 'release-control-*.yaml' | sort | tr '\n' ' ')"
+                      echo "release_intent=delivery/releases/<+pipeline.variables.target_environment>.yaml"
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}

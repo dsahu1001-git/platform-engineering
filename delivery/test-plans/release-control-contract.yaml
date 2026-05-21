@@ -1,0 +1,28 @@
+apiVersion: platform.example.com/v1
+kind: TestPlan
+metadata:
+  name: release-control-contract
+spec:
+  owner: backend-team
+  scope: service
+  blocking: true
+  stages:
+    - name: api-status-contract
+      type: http
+      path: /api/status
+      expectedStatus: 200
+      assertions:
+        - jsonPath: $.service
+          equals: release-control-backend
+        - jsonPath: $.environment
+          oneOf:
+            - dev
+            - stage
+            - prod
+    - name: logs-contract
+      type: http
+      path: /api/logs
+      expectedStatus: 200
+      assertions:
+        - jsonPath: $.logs
+          type: array

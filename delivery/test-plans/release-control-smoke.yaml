@@ -1,0 +1,22 @@
+apiVersion: platform.example.com/v1
+kind: TestPlan
+metadata:
+  name: release-control-smoke
+spec:
+  owner: platform-team
+  scope: environment
+  blocking: true
+  stages:
+    - name: frontend-availability
+      type: http
+      path: /
+      expectedStatus: 200
+    - name: backend-health
+      type: http
+      path: /api/status
+      expectedStatus: 200
+      assertions:
+        - jsonPath: $.health
+          equals: healthy
+        - jsonPath: $.database.status
+          equals: healthy
